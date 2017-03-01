@@ -15,8 +15,12 @@ import queryString from 'query-string';
 import { createPath } from 'history/PathUtils';
 import history from './core/history';
 import App from './components/App';
+import configureStore from './store/configureStore';
 import { updateMeta } from './core/DOMUtils';
 import { ErrorReporter, deepForceUpdate } from './core/devUtils';
+import createApolloClient from './core/createApolloClient';
+
+const apolloClient = createApolloClient();
 
 // Global (context) variables that can be easily accessed from any React component
 // https://facebook.github.io/react/docs/context.html
@@ -28,6 +32,11 @@ const context = {
     const removeCss = styles.map(x => x._insertCss());
     return () => { removeCss.forEach(f => f()); };
   },
+  // For react-apollo
+  client: apolloClient,
+  // Initialize a new Redux store
+  // http://redux.js.org/docs/basics/UsageWithReact.html
+  store: configureStore(window.APP_STATE, { history, apolloClient }),
 };
 
 // Switch off the native scroll restoration behavior and handle it manually
@@ -106,6 +115,7 @@ async function onLocationChange(location, action) {
     // it finds the first route that matches provided URL path string
     // and whose action method returns anything other than `undefined`.
     const route = await UniversalRouter.resolve(routes, {
+      ...context,
       path: location.pathname,
       query: queryString.parse(location.search),
     });
